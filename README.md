@@ -1,4 +1,4 @@
-# Yeast-based-FBP
+# Yeast-based FBP Caffeic Acid Quantification
 
 ## How to Use
 Download the Git Hub directory.
