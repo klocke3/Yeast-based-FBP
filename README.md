@@ -1,13 +1,14 @@
 # Yeast-based-FBP
 
-How to Use
+## How to Use
 
 Prepare your .xlsx data file as a template. In each column, insert the RLU values from your samples in triplicate.
 
 Run the script using the following command:
 
-`python script.py -i data.xlsx -u micromolar`
-
+```sh
+python script.py -i data.xlsx -u micromolar`
+```
 
 The -i argument specifies the input .xlsx file.
 
