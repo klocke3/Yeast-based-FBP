@@ -13,16 +13,30 @@ Prepare your .xlsx data file as a template. In each column, insert the RLU value
 python script.py -i data.xlsx -u micromolar
 ```
 
-The -i argument specifies the input .xlsx file.
+| Argument | Description                                    |
+| -------- | ---------------------------------------------- |
+| `-i`     | Input `.xlsx` file containing the raw RLU data |
+| `-u`     | Unit of caffeic acid concentration  `micromolar` or  `millimolar`|
 
-The -u argument defines the unit of caffeic acid concentration.
-Accepted values are:
+## Data Organization
 
-"micromolar" → displays units as µM
+Each sample should be placed in a separate sheet in the Excel file.
 
-"millimolar" → displays units as mM
+An example template is provided in the Example/ folder.
 
-The generated plots will be saved in the Graphics/ folder, and the calculated results (including caffeic acid concentration, AUC, R², and p-value) will be stored in summary_results.xlsx.
 
-For each sample, use a separate sheet name in the Excel file.
-An example data template is available in the Example/ folder.
+## Output
+
+Plots: Saved in the Graphics/ folder (one plot per sheet).
+
+Summary table: Saved as summary_results.xlsx, including:
+
+Caffeic acid concentration
+
+AUC (Area Under the Curve)
+
+R² (correlation coefficient)
+
+p-value
+
+
