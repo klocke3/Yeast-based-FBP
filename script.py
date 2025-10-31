@@ -40,7 +40,7 @@ excel_file = args.input
 sheets = pd.ExcelFile(excel_file).sheet_names
 
 # Create folder to save graphs
-output_folder = 'graphs'
+output_folder = 'Yeast-based-FBP/Results/graphs'
 os.makedirs(output_folder, exist_ok=True)
 
 # Prepare list to store summary results
@@ -125,9 +125,17 @@ for sheet_name in sheets:
         'x when y=0': f'{x_zero:.3f}' if not np.isnan(x_zero) else 'N/A'
     })
 
-# Create summary DataFrame and save to Excel
-summary_df = pd.DataFrame(summary_data)
-summary_df.to_excel('summary_results.xlsx', index=False)
+# Criar pasta de resultados relativa ao diretório atual
+path_save = 'Yeast-based-FBP/Results'
+os.makedirs(path_save, exist_ok=True)
 
-print("\n✅ Summary table saved as 'summary_results.xlsx'")
+# Criar DataFrame de resumo
+summary_df = pd.DataFrame(summary_data)
+
+# Salvar o Excel na pasta criada
+summary_file = os.path.join(path_save, 'summary_results.xlsx')
+summary_df.to_excel(summary_file, index=False)
+
+print(f"✅ Summary table saved as: {summary_file}")
 print(f"📊 Graphs saved in folder: '{output_folder}'")
+
