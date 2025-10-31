@@ -27,9 +27,9 @@ An example template is provided in the Example/ folder.
 
 ## Output
 
-Plots: Saved in the Graphics/ folder (one plot per sheet).
+Plots: Saved in the `Results/graphics/` folder (one plot per sheet).
 
-Summary table: Saved as summary_results.xlsx, including:
+Summary table: Saved as `Result/summary_results.xlsx`, including:
 
 Caffeic acid concentration
 
