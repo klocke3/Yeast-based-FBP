@@ -4,7 +4,7 @@
 Download the Git Hub directory.
 
 ```sh
-get clone https://github.com/klocke3/Yeast-based-FBP.git
+git clone https://github.com/klocke3/Yeast-based-FBP.git
 ```
 
 Prepare your .xlsx data file as a template. In each column, insert the RLU values from your samples in triplicate. At folder Yeast-based-FBP, save your data file and run the script using the following command:
