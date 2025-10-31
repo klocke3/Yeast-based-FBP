@@ -37,6 +37,6 @@ AUC (Area Under the Curve)
 
 R² (correlation coefficient)
 
-p-value
+p-value of standard curve
 
 
