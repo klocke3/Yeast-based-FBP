@@ -6,7 +6,7 @@ Prepare your .xlsx data file as a template. In each column, insert the RLU value
 
 Run the script using the following command:
 
-python script.py -i data.xlsx -u micromolar
+`python script.py -i data.xlsx -u micromolar`
 
 
 The -i argument specifies the input .xlsx file.
