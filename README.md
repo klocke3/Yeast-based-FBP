@@ -37,10 +37,18 @@ Summary table: Saved as `Result/summary_results.xlsx`, including:
 
 Caffeic acid concentration
 
-AUC (Area Under the Curve)
-
 R² (correlation coefficient)
 
-p-value of standard curve
+Average AUC (Area Under the Curve) and standard deviation (SD)
+
+Slope and standard error (SE)
+
+Intercetp and standard error (SE)
+
+F value
+
+Prob > F
+
+
 
 
