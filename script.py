@@ -161,7 +161,7 @@ for sheet_name in sheets:
     })
 
 # 5️⃣ Salvar resultados
-path_save = 'Yeast-based-FBP/Results'
+path_save = '/Results'
 os.makedirs(path_save, exist_ok=True)
 
 summary_df = pd.DataFrame(summary_data)
@@ -172,5 +172,6 @@ summary_df.to_excel(summary_file, index=False)
 print(f"\n✅ Summary table saved as: {summary_file}")
 print(f"📊 Graphs saved in folder: '{output_folder}'")
 print("🎯 Done! Includes regression significance and lack-of-fit analysis.")
+
 
 
