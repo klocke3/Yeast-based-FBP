@@ -10,6 +10,10 @@ git clone https://github.com/klocke3/Yeast-based-FBP.git
 Prepare your .xlsx data file as a template. In each column, insert the RLU values from your samples in triplicate. At folder Yeast-based-FBP, save your data file and run the script using the following command:
 
 ```sh
+cd /Yeast-based-FBP
+```
+
+```sh
 python script.py -i data.xlsx -u micromolar
 ```
 
