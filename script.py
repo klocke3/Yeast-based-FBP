@@ -6,7 +6,7 @@ import os
 import argparse
 
 # 1️⃣ Parser
-parser = argparse.ArgumentParser(description="Process Excel data and plot AUC with regression and lack of fit analysis")
+parser = argparse.ArgumentParser(description="Process Excel data and plot AUC with regression and ANOVA analysis")
 
 parser.add_argument(
     "-i", "--input",
@@ -23,7 +23,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-# 2️⃣ Map user input para símbolo químico
+# 2️⃣ Map user input to chemical symbol
 unit_map = {
     "micromolar": "µM",
     "millimolar": "mM"
@@ -36,24 +36,24 @@ print(f"⚗️ Unit for caffeic acid: {unit_symbol}")
 
 excel_file = args.input
 
-# 3️⃣ Obter todas as planilhas
+# 3️⃣ Get all sheet names
 sheets = pd.ExcelFile(excel_file).sheet_names
 
-# Criar pasta para salvar gráficos
+# Create folder for saving graphs
 output_folder = 'Results/graphs'
 os.makedirs(output_folder, exist_ok=True)
 
-# Lista para armazenar resultados
+# List to store summary data
 summary_data = []
 
-# 4️⃣ Loop em todas as planilhas
+# 4️⃣ Loop through all sheets
 for sheet_name in sheets:
     df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
 
-    # Extrair vetor de tempo (coluna A, linhas 4–33)
+    # Extract time vector (column A, rows 4–33)
     time = df.iloc[3:33, 0].replace(r'[^\d.-]', '', regex=True).apply(pd.to_numeric, errors='coerce').reset_index(drop=True)
 
-    # Criar grupos de colunas (3 colunas + 1 pulada)
+    # Create column groups (3 columns + 1 skipped)
     cols = list(range(1, df.shape[1]))
     grouped_cols = []
     for i in range(0, len(cols), 4):
@@ -69,19 +69,19 @@ for sheet_name in sheets:
         c1, c2, c3 = group
         sub = df.iloc[3:33, [c1, c2, c3]].replace(r'[^\d.-]', '', regex=True).apply(pd.to_numeric, errors='coerce')
 
-        # Integrar (AUC) para cada réplica
+        # Integrate (AUC) for each replicate
         areas = [np.trapz(sub.iloc[:, i], time) for i in range(sub.shape[1])]
 
-        # Média e desvio padrão
+        # Mean and SD
         mean_areas.append(np.mean(areas))
         std_areas.append(np.std(areas, ddof=1))
 
-        # Extrair concentração numérica da primeira célula do grupo
+        # Extract numeric label from first cell of group
         cell_name = str(df.iloc[0, c1])
         number = ''.join(filter(lambda x: x.isdigit() or x == '.', cell_name))
         labels.append(float(number) if number else np.nan)
 
-    # Regressão linear
+    # Linear regression
     x = np.array(labels)
     y = np.array(mean_areas)
     y_err = np.array(std_areas)
@@ -89,43 +89,30 @@ for sheet_name in sheets:
     slope, intercept, r_value, p_value, std_err = linregress(x, y)
     y_fit = slope * x + intercept
 
-    # ---------- Teste de Lack of Fit ----------
-    all_x, all_y = [], []
-    for group, conc in zip(grouped_cols, labels):
-        c1, c2, c3 = group
-        sub = df.iloc[3:33, [c1, c2, c3]].replace(r'[^\d.-]', '', regex=True).apply(pd.to_numeric, errors='coerce')
-        areas = [np.trapz(sub.iloc[:, i], time) for i in range(sub.shape[1])]
-        for val in areas:
-            all_x.append(conc)
-            all_y.append(val)
+    # ------------- ANOVA CALCULATION -------------
+    n = len(x)
+    y_mean = np.mean(y)
+    ss_total = np.sum((y - y_mean)**2)
+    ss_reg = np.sum((y_fit - y_mean)**2)
+    ss_res = np.sum((y - y_fit)**2)
 
-    all_x = np.array(all_x)
-    all_y = np.array(all_y)
-    y_pred_all = slope * all_x + intercept
+    df_reg = 1
+    df_res = n - 2
 
-    ss_res = np.sum((all_y - y_pred_all) ** 2)
+    ms_reg = ss_reg / df_reg
+    ms_res = ss_res / df_res
 
-    # Soma dos quadrados do erro puro (dentro das replicatas)
-    ss_pe = 0
-    n_rep = 3
-    for conc in np.unique(all_x):
-        mask = all_x == conc
-        y_rep = all_y[mask]
-        ss_pe += np.sum((y_rep - np.mean(y_rep)) ** 2)
-    df_pe = len(np.unique(all_x)) * (n_rep - 1)
+    F_value = ms_reg / ms_res if ms_res != 0 else np.nan
+    p_anova = 1 - f.cdf(F_value, df_reg, df_res) if not np.isnan(F_value) else np.nan
+    # ---------------------------------------------
 
-    # Soma dos quadrados da falta de ajuste
-    ss_lof = ss_res - ss_pe
-    df_lof = len(np.unique(all_x)) - 2  # dois parâmetros (slope e intercept)
+    # Compute standard error of slope and intercept manually
+    s_yx = np.sqrt(ms_res)
+    s_xx = np.sum((x - np.mean(x))**2)
+    se_slope = s_yx / np.sqrt(s_xx)
+    se_intercept = s_yx * np.sqrt(1/n + np.mean(x)**2 / s_xx)
 
-    ms_lof = ss_lof / df_lof
-    ms_pe = ss_pe / df_pe
-
-    F_lof = ms_lof / ms_pe if ms_pe != 0 else np.nan
-    p_lof = 1 - f.cdf(F_lof, df_lof, df_pe) if not np.isnan(F_lof) else np.nan
-    # -----------------------------------------
-
-    # Plotagem
+    # Plot
     plt.figure(figsize=(8, 5))
     plt.errorbar(x, y, yerr=y_err, fmt='o', capsize=5, markersize=8, color='royalblue')
     plt.plot(x, y_fit, color='red', linestyle='--', label=f'Linear regression (r={r_value:.2f})')
@@ -142,10 +129,10 @@ for sheet_name in sheets:
     plt.close()
     print(f"✅ Graph saved: {filename}")
 
-    # Calcular x quando y=0
+    # Compute x when y=0
     x_zero = -intercept / slope if slope != 0 else np.nan
 
-    # Armazenar resultados
+    # Store summary results
     summary_data.append({
         'Sheet name': sheet_name,
         f'[Caffeic acid] ({unit_symbol})': ', '.join([f'{val:.2f}' for val in labels]),
@@ -153,15 +140,16 @@ for sheet_name in sheets:
         'SD (AUC)': ', '.join([f'{val:.2f}' for val in std_areas]),
         'R': f'{r_value:.3f}',
         'Slope': f'{slope:.3f}',
+        'SE(Slope)': f'{se_slope:.3e}',
         'Intercept': f'{intercept:.3f}',
-        'Regression p-value': f'{p_value:.3e}',
-        'Lack of fit F': f'{F_lof:.3f}',
-        'Lack of fit p-value': f'{p_lof:.3e}' if not np.isnan(p_lof) else 'N/A',
+        'SE(Intercept)': f'{se_intercept:.3e}',
+        'F value': f'{F_value:.3f}',
+        'Prob > F': f'{p_anova:.3e}',
         'x when y=0': f'{x_zero:.3f}' if not np.isnan(x_zero) else 'N/A'
     })
 
-# 5️⃣ Salvar resultados
-path_save = '/Results'
+# 5️⃣ Save results
+path_save = 'Results'
 os.makedirs(path_save, exist_ok=True)
 
 summary_df = pd.DataFrame(summary_data)
@@ -171,7 +159,9 @@ summary_df.to_excel(summary_file, index=False)
 
 print(f"\n✅ Summary table saved as: {summary_file}")
 print(f"📊 Graphs saved in folder: '{output_folder}'")
-print("🎯 Done! Includes regression significance and lack-of-fit analysis.")
+print("🎯 Done! Includes ANOVA (F and Prob>F) and standard errors of slope/intercept.")
+
+
 
 
 
