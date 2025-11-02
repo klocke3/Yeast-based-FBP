@@ -140,9 +140,9 @@ for sheet_name in sheets:
         'SD (AUC)': ', '.join([f'{val:.2f}' for val in std_areas]),
         'R': f'{r_value:.3f}',
         'Slope': f'{slope:.3f}',
-        'SE(Slope)': f'{se_slope:.3e}',
+        'SE(Slope)': f'{se_slope:.2e}',
         'Intercept': f'{intercept:.3f}',
-        'SE(Intercept)': f'{se_intercept:.3e}',
+        'SE(Intercept)': f'{se_intercept:.2e}',
         'F value': f'{F_value:.3f}',
         'Prob > F': f'{p_anova:.3e}',
         'x when y=0': f'{x_zero:.3f}' if not np.isnan(x_zero) else 'N/A'
