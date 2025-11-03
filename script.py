@@ -116,7 +116,7 @@ for sheet_name in sheets:
     plt.figure(figsize=(8, 5))
     plt.errorbar(x, y, yerr=y_err, fmt='o', capsize=5, markersize=8, color='royalblue')
     plt.plot(x, y_fit, color='red', linestyle='--', label=f'Linear regression (r={r_value:.4f})')
-    plt.xlabel(f'[Caffeic acid] ({unit_symbol})')
+    plt.xlabel(f'[Caffeic acid] samples ({unit_symbol})')
     plt.ylabel('AUC (RLU)')
     plt.title(f'Average RLU (± SD) — {sheet_name}')
     plt.ylim(bottom=0)
@@ -160,6 +160,7 @@ summary_df.to_excel(summary_file, index=False)
 print(f"\n✅ Summary table saved as: {summary_file}")
 print(f"📊 Graphs saved in folder: '{output_folder}'")
 print("🎯 Done! Includes ANOVA (F and Prob>F) and standard errors of slope/intercept.")
+
 
 
 
