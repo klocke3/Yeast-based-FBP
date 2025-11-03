@@ -145,7 +145,7 @@ for sheet_name in sheets:
         'SE(Intercept)': f'{se_intercept:.2e}',
         'F value': f'{F_value:.3f}',
         'Prob > F': f'{p_anova:.3e}',
-        'x when y=0': f'{20*x_zero:.3f}' if not np.isnan(x_zero) else 'N/A'
+        'x when y=0': f'{x_zero:.3f}' if not np.isnan(x_zero) else 'N/A'
     })
 
 # 5️⃣ Save results
@@ -160,6 +160,7 @@ summary_df.to_excel(summary_file, index=False)
 print(f"\n✅ Summary table saved as: {summary_file}")
 print(f"📊 Graphs saved in folder: '{output_folder}'")
 print("🎯 Done! Includes ANOVA (F and Prob>F) and standard errors of slope/intercept.")
+
 
 
 
