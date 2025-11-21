@@ -1,3 +1,9 @@
+# Versão atualizada do script com:
+# - Cálculo automático de LOD e LOQ
+# - Cálculo da concentração por adição de padrão
+# - Desvio (incerteza) da concentração
+# - Substituição de "x when y=0" por "[caffeic acid] (concentração)"
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,14 +13,8 @@ import argparse
 
 # 1️⃣ Parser
 parser = argparse.ArgumentParser(description="Process Excel data and plot AUC with regression and ANOVA analysis")
-parser.add_argument(
-    "-i", "--input", required=True,
-    help="Input Excel file"
-)
-parser.add_argument(
-    "-u", "--unit", choices=["micromolar", "millimolar"], default="micromolar",
-    help="Unit for caffeic acid concentration (micromolar or millimolar)"
-)
+parser.add_argument("-i", "--input", required=True, help="Input Excel file")
+parser.add_argument("-u", "--unit", choices=["micromolar", "millimolar"], default="micromolar", help="Unit for caffeic acid concentration (micromolar or millimolar)")
 args = parser.parse_args()
 
 # 2️⃣ Map user input to chemical symbol
@@ -24,30 +24,27 @@ unit_map = {
 }
 unit_symbol = unit_map[args.unit]
 
-print(f"📂 Input file: {args.input}")
+excel_file = args.input
+print(f"📂 Input file: {excel_file}")
 print(f"⚗️ Unit for caffeic acid: {unit_symbol}")
 
-excel_file = args.input
-
-# 3️⃣ Get all sheet names
+# 3️⃣ Get sheet names
 sheets = pd.ExcelFile(excel_file).sheet_names
 
 # Create folder for saving graphs
 output_folder = 'Results/graphs'
 os.makedirs(output_folder, exist_ok=True)
 
-# List to store summary data
 summary_data = []
 
-# 4️⃣ Loop through all sheets
+# 4️⃣ Loop through sheets
 for sheet_name in sheets:
-
     df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
 
-    # Extract time vector (column A, rows 4–33)
+    # Extract time vector
     time = df.iloc[3:33, 0].replace(r'[^\d.-]', '', regex=True).apply(pd.to_numeric, errors='coerce').reset_index(drop=True)
 
-    # Create column groups (3 columns + 1 skipped)
+    # Group columns (3 replicates + 1 skip)
     cols = list(range(1, df.shape[1]))
     grouped_cols = []
     for i in range(0, len(cols), 4):
@@ -55,22 +52,14 @@ for sheet_name in sheets:
         if len(group) == 3:
             grouped_cols.append(group)
 
-    mean_areas = []
-    std_areas = []
-    labels = []
+    mean_areas, std_areas, labels = [], [], []
 
     for group in grouped_cols:
         c1, c2, c3 = group
         sub = df.iloc[3:33, [c1, c2, c3]].replace(r'[^\d.-]', '', regex=True).apply(pd.to_numeric, errors='coerce')
-
-        # Integrate (AUC)
         areas = [np.trapz(sub.iloc[:, i], time) for i in range(sub.shape[1])]
-
-        # Mean and SD
         mean_areas.append(np.mean(areas))
         std_areas.append(np.std(areas, ddof=1))
-
-        # Extract numeric label
         cell_name = str(df.iloc[0, c1])
         number = ''.join(filter(lambda x: x.isdigit() or x == '.', cell_name))
         labels.append(float(number) if number else np.nan)
@@ -83,37 +72,23 @@ for sheet_name in sheets:
     slope, intercept, r_value, p_value, std_err = linregress(x, y)
     y_fit = slope * x + intercept
 
-    # ------------- ANOVA -------------
+    # ANOVA
     n = len(x)
     y_mean = np.mean(y)
-
-    ss_total = np.sum((y - y_mean)**2)
     ss_reg = np.sum((y_fit - y_mean)**2)
     ss_res = np.sum((y - y_fit)**2)
-
     df_reg = 1
     df_res = n - 2
-
     ms_reg = ss_reg / df_reg
     ms_res = ss_res / df_res
-
     F_value = ms_reg / ms_res if ms_res != 0 else np.nan
     p_anova = 1 - f.cdf(F_value, df_reg, df_res) if not np.isnan(F_value) else np.nan
 
-    # Compute SE of slope & intercept
+    # Standard errors
     s_yx = np.sqrt(ms_res)
     s_xx = np.sum((x - np.mean(x))**2)
-
     se_slope = s_yx / np.sqrt(s_xx)
     se_intercept = s_yx * np.sqrt(1/n + np.mean(x)**2 / s_xx)
-
-    # 🔹 NOVO — LOD e LOQ
-    LOD = 3 * se_intercept / slope if slope != 0 else np.nan
-    LOQ = 10 * se_intercept / slope if slope != 0 else np.nan
-
-    # 🔹 NOVO — concentração correspondente ao intercepto
-    x_zero = -intercept / slope if slope != 0 else np.nan
-    x_zero_pos = abs(x_zero)  # deixar positivo
 
     # Plot
     plt.figure(figsize=(8, 5))
@@ -126,14 +101,30 @@ for sheet_name in sheets:
     plt.grid(axis='y', linestyle='--', alpha=0.6)
     plt.legend()
     plt.tight_layout()
-
     filename = os.path.join(output_folder, f"{sheet_name.replace('/', '_')}.png")
     plt.savefig(filename, dpi=300)
     plt.close()
 
-    print(f"✅ Graph saved: {filename}")
+    # Concentration by standard addition
+    if slope != 0:
+        conc = -intercept / slope
+    else:
+        conc = np.nan
 
-    # Store summary results
+    # Uncertainty of concentration
+    if slope != 0:
+        conc_err = np.sqrt(
+            (se_intercept / slope)**2 +
+            ((intercept * se_slope) / (slope**2))**2
+        )
+    else:
+        conc_err = np.nan
+
+    # LOD and LOQ (using SE(intercept))
+    LOD = (3.3 * se_intercept) / slope if slope != 0 else np.nan
+    LOQ = (10 * se_intercept) / slope if slope != 0 else np.nan
+
+    # Store summary
     summary_data.append({
         'Sheet name': sheet_name,
         f'[Caffeic acid] ({unit_symbol})': ', '.join([f'{val:.2f}' for val in labels]),
@@ -146,27 +137,21 @@ for sheet_name in sheets:
         'SE(Intercept)': f'{se_intercept:.2e}',
         'F value': f'{F_value:.3f}',
         'Prob > F': f'{p_anova:.3e}',
-
-        # 🔹 NOVO — renomeado e positivo
-        '[caffeic acid] ({unit_symbol})': f'{x_zero_pos:.3f}' if not np.isnan(x_zero_pos) else 'N/A',
-
-        # 🔹 NOVO — LOD & LOQ
-        'LOD': f'{LOD:.3f}' if not np.isnan(LOD) else 'N/A',
-        'LOQ': f'{LOQ:.3f}' if not np.isnan(LOQ) else 'N/A'
+        'Concentration (± error)': f'{abs(conc):.3f} ± {conc_err:.3f}',
+        'LOD': f'{LOD:.3f}',
+        'LOQ': f'{LOQ:.3f}'
     })
 
-# 5️⃣ Save results
-
+# Save table
 path_save = 'Results'
 os.makedirs(path_save, exist_ok=True)
-
 summary_df = pd.DataFrame(summary_data)
 summary_file = os.path.join(path_save, 'summary_results.xlsx')
 summary_df.to_excel(summary_file, index=False)
 
 print(f"\n✅ Summary table saved as: {summary_file}")
 print(f"📊 Graphs saved in folder: '{output_folder}'")
-print("🎯 Done! Includes ANOVA, SEs, LOD, LOQ and corrected concentration value.")
+print("🎯 Done! Includes concentration, uncertainty, LOD, LOQ, and corrected naming.")
 
 
 
