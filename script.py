@@ -148,7 +148,7 @@ for sheet_name in sheets:
         'Prob > F': f'{p_anova:.3e}',
 
         # 🔹 NOVO — renomeado e positivo
-        '[caffeic acid] (concentração)': f'{x_zero_pos:.3f}' if not np.isnan(x_zero_pos) else 'N/A',
+        '[caffeic acid] ({unit_symbol})': f'{x_zero_pos:.3f}' if not np.isnan(x_zero_pos) else 'N/A',
 
         # 🔹 NOVO — LOD & LOQ
         'LOD': f'{LOD:.3f}' if not np.isnan(LOD) else 'N/A',
@@ -167,6 +167,7 @@ summary_df.to_excel(summary_file, index=False)
 print(f"\n✅ Summary table saved as: {summary_file}")
 print(f"📊 Graphs saved in folder: '{output_folder}'")
 print("🎯 Done! Includes ANOVA, SEs, LOD, LOQ and corrected concentration value.")
+
 
 
 
