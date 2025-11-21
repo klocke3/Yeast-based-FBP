@@ -7,20 +7,14 @@ import argparse
 
 # 1️⃣ Parser
 parser = argparse.ArgumentParser(description="Process Excel data and plot AUC with regression and ANOVA analysis")
-
 parser.add_argument(
-    "-i", "--input",
-    required=True,
+    "-i", "--input", required=True,
     help="Input Excel file"
 )
-
 parser.add_argument(
-    "-u", "--unit",
-    choices=["micromolar", "millimolar"],
-    default="micromolar",
+    "-u", "--unit", choices=["micromolar", "millimolar"], default="micromolar",
     help="Unit for caffeic acid concentration (micromolar or millimolar)"
 )
-
 args = parser.parse_args()
 
 # 2️⃣ Map user input to chemical symbol
@@ -28,7 +22,6 @@ unit_map = {
     "micromolar": "µM",
     "millimolar": "mM"
 }
-
 unit_symbol = unit_map[args.unit]
 
 print(f"📂 Input file: {args.input}")
@@ -48,6 +41,7 @@ summary_data = []
 
 # 4️⃣ Loop through all sheets
 for sheet_name in sheets:
+
     df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
 
     # Extract time vector (column A, rows 4–33)
@@ -69,14 +63,14 @@ for sheet_name in sheets:
         c1, c2, c3 = group
         sub = df.iloc[3:33, [c1, c2, c3]].replace(r'[^\d.-]', '', regex=True).apply(pd.to_numeric, errors='coerce')
 
-        # Integrate (AUC) for each replicate
+        # Integrate (AUC)
         areas = [np.trapz(sub.iloc[:, i], time) for i in range(sub.shape[1])]
 
         # Mean and SD
         mean_areas.append(np.mean(areas))
         std_areas.append(np.std(areas, ddof=1))
 
-        # Extract numeric label from first cell of group
+        # Extract numeric label
         cell_name = str(df.iloc[0, c1])
         number = ''.join(filter(lambda x: x.isdigit() or x == '.', cell_name))
         labels.append(float(number) if number else np.nan)
@@ -89,9 +83,10 @@ for sheet_name in sheets:
     slope, intercept, r_value, p_value, std_err = linregress(x, y)
     y_fit = slope * x + intercept
 
-    # ------------- ANOVA CALCULATION -------------
+    # ------------- ANOVA -------------
     n = len(x)
     y_mean = np.mean(y)
+
     ss_total = np.sum((y - y_mean)**2)
     ss_reg = np.sum((y_fit - y_mean)**2)
     ss_res = np.sum((y - y_fit)**2)
@@ -104,13 +99,21 @@ for sheet_name in sheets:
 
     F_value = ms_reg / ms_res if ms_res != 0 else np.nan
     p_anova = 1 - f.cdf(F_value, df_reg, df_res) if not np.isnan(F_value) else np.nan
-    # ---------------------------------------------
 
-    # Compute standard error of slope and intercept manually
+    # Compute SE of slope & intercept
     s_yx = np.sqrt(ms_res)
     s_xx = np.sum((x - np.mean(x))**2)
+
     se_slope = s_yx / np.sqrt(s_xx)
     se_intercept = s_yx * np.sqrt(1/n + np.mean(x)**2 / s_xx)
+
+    # 🔹 NOVO — LOD e LOQ
+    LOD = 3 * se_intercept / slope if slope != 0 else np.nan
+    LOQ = 10 * se_intercept / slope if slope != 0 else np.nan
+
+    # 🔹 NOVO — concentração correspondente ao intercepto
+    x_zero = -intercept / slope if slope != 0 else np.nan
+    x_zero_pos = abs(x_zero)  # deixar positivo
 
     # Plot
     plt.figure(figsize=(8, 5))
@@ -127,10 +130,8 @@ for sheet_name in sheets:
     filename = os.path.join(output_folder, f"{sheet_name.replace('/', '_')}.png")
     plt.savefig(filename, dpi=300)
     plt.close()
-    print(f"✅ Graph saved: {filename}")
 
-    # Compute x when y=0
-    x_zero = -intercept / slope if slope != 0 else np.nan
+    print(f"✅ Graph saved: {filename}")
 
     # Store summary results
     summary_data.append({
@@ -145,21 +146,29 @@ for sheet_name in sheets:
         'SE(Intercept)': f'{se_intercept:.2e}',
         'F value': f'{F_value:.3f}',
         'Prob > F': f'{p_anova:.3e}',
-        'x when y=0': f'{x_zero:.3f}' if not np.isnan(x_zero) else 'N/A'
+
+        # 🔹 NOVO — renomeado e positivo
+        '[caffeic acid] (concentração)': f'{x_zero_pos:.3f}' if not np.isnan(x_zero_pos) else 'N/A',
+
+        # 🔹 NOVO — LOD & LOQ
+        'LOD': f'{LOD:.3f}' if not np.isnan(LOD) else 'N/A',
+        'LOQ': f'{LOQ:.3f}' if not np.isnan(LOQ) else 'N/A'
     })
 
 # 5️⃣ Save results
+
 path_save = 'Results'
 os.makedirs(path_save, exist_ok=True)
 
 summary_df = pd.DataFrame(summary_data)
-
 summary_file = os.path.join(path_save, 'summary_results.xlsx')
 summary_df.to_excel(summary_file, index=False)
 
 print(f"\n✅ Summary table saved as: {summary_file}")
 print(f"📊 Graphs saved in folder: '{output_folder}'")
-print("🎯 Done! Includes ANOVA (F and Prob>F) and standard errors of slope/intercept.")
+print("🎯 Done! Includes ANOVA, SEs, LOD, LOQ and corrected concentration value.")
+
+
 
 
 
