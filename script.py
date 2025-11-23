@@ -137,7 +137,7 @@ for sheet_name in sheets:
         'SE(Intercept)': f'{se_intercept:.2e}',
         'F value': f'{F_value:.3f}',
         'Prob > F': f'{p_anova:.3e}',
-        'Concentration (± error)': f'{abs(conc):.3f} ± {conc_err:.3f}',
+        'Concentration (± error)': f'{(abs(conc) / 0.99):.3f} ± {(conc_err /0.99) :.3f}',
         'LOD': f'{LOD:.3f}',
         'LOQ': f'{LOQ:.3f}'
     })
@@ -152,6 +152,7 @@ summary_df.to_excel(summary_file, index=False)
 print(f"\n✅ Summary table saved as: {summary_file}")
 print(f"📊 Graphs saved in folder: '{output_folder}'")
 print("🎯 Done! Includes concentration, uncertainty, LOD, LOQ, and corrected naming.")
+
 
 
 
