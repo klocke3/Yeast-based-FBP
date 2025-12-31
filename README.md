@@ -37,7 +37,7 @@ Summary table: Saved as `Result/summary_results.xlsx`, including:
 
 Caffeic acid concentration
 
-R² (correlation coefficient)
+Pearson correlation coefficient (R) 
 
 Average AUC (Area Under the Curve) and standard deviation (SD)
 
