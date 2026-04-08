@@ -121,8 +121,8 @@ for sheet_name in sheets:
         conc_err = np.nan
 
     # LOD and LOQ (using SE(intercept))
-    LOD = (3.3 * se_yx) / slope if slope != 0 else np.nan
-    LOQ = (10 * se_yx) / slope if slope != 0 else np.nan
+    LOD = (3.3 * s_yx) / slope if slope != 0 else np.nan
+    LOQ = (10 * s_yx) / slope if slope != 0 else np.nan
 
     # Store summary
     summary_data.append({
