@@ -132,6 +132,7 @@ for sheet_name in sheets:
         'SD (AUC)': ', '.join([f'{val:.2f}' for val in std_areas]),
         'R': f'{r_value:.3f}',
         'Slope': f'{slope:.3f}',
+        'Residual standard': f'{s_yx}';
         'SE(Slope)': f'{se_slope:.2e}',
         'Intercept': f'{intercept:.3f}',
         'SE(Intercept)': f'{se_intercept:.2e}',
