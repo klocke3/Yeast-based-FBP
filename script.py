@@ -124,24 +124,33 @@ for sheet_name in sheets:
     LOD = (3.3 * s_yx) / slope if slope != 0 else np.nan
     LOQ = (10 * s_yx) / slope if slope != 0 else np.nan
 
-    # Store summary
-    summary_data.append({
-        'Sheet name': sheet_name,
-        f'[Caffeic acid] ({unit_symbol})': ', '.join([f'{val:.2f}' for val in labels]),
-        'Average AUC': ', '.join([f'{val:.2f}' for val in mean_areas]),
-        'SD (AUC)': ', '.join([f'{val:.2f}' for val in std_areas]),
-        'R': f'{r_value:.3f}',
-        'Slope': f'{slope:.3f}',
-        'Residual standard': f'{s_yx}',
-        'SE(Slope)': f'{se_slope:.2e}',
-        'Intercept': f'{intercept:.3f}',
-        'SE(Intercept)': f'{se_intercept:.2e}',
-        'F value': f'{F_value:.3f}',
-        'Prob > F': f'{p_anova:.3e}',
-        'Concentration (± error)': f'{(abs(conc) / 0.99):.3f} ± {(conc_err /0.99) :.3f}',
-        'LOD': f'{LOD:.3f}',
-        'LOQ': f'{LOQ:.3f}'
-    })
+dilution_factor = 20
+
+# Store summary
+summary_data.append({
+    'Sheet name': sheet_name,
+    f'[Caffeic acid] ({unit_symbol})': ', '.join([f'{val:.2f}' for val in labels]),
+    'Average AUC': ', '.join([f'{val:.2f}' for val in mean_areas]),
+    'SD (AUC)': ', '.join([f'{val:.2f}' for val in std_areas]),
+    'R': f'{r_value:.3f}',
+    'Slope': f'{slope:.3f}',
+    'Residual standard': f'{s_yx}',
+    'SE(Slope)': f'{se_slope:.2e}',
+    'Intercept': f'{intercept:.3f}',
+    'SE(Intercept)': f'{se_intercept:.2e}',
+    'F value': f'{F_value:.3f}',
+    'Prob > F': f'{p_anova:.3e}',
+
+    # valores no poço
+    'Concentration (± error)': f'{(abs(conc) / 0.99):.3f} ± {(conc_err / 0.99):.3f}',
+    'LOD': f'{LOD:.3f}',
+    'LOQ': f'{LOQ:.3f}',
+
+    # valores corrigidos para a amostra original
+    'Concentration ×20 (± error)': f'{(abs(conc) / 0.99 * dilution_factor):.3f} ± {(conc_err / 0.99 * dilution_factor):.3f}',
+    'LOD ×20': f'{LOD * dilution_factor:.3f}',
+    'LOQ ×20': f'{LOQ * dilution_factor:.3f}'
+})
 
 # Save table
 path_save = 'Results'
